@@ -1,5 +1,7 @@
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
+import iziToast from "izitoast";
+import "izitoast/dist/css/iziToast.min.css";
 
 
 
@@ -19,39 +21,61 @@ const options = {
     onClose(selectedDates) {
         if (new Date() < selectedDates[0]) {
             userSelectedDate = selectedDates[0];
-            console.log(userSelectedDate);
-            startBtn.disabled = false;
+            startBtn.disabled = false
         } else {
             makeDisableBtn();
-            alert("Please choose a date in the future");
+            iziToast.show({
+                message: 'Please choose a date in the future',
+                color: 'red',
+                position: 'topRight'
+            });
         }
 
     },
 };
 flatpickr("#datetime-picker", options);
 
-startBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', startTheTimer);
+
+function startTheTimer(event) {
     makeDisableBtn();
+    event.target.removeEventListener('click', startTheTimer);
+
     let userSelectedDateInMs = userSelectedDate.getTime();
+    let clickedTime = new Date();
+
+    userSelectedDateInMs = Math.ceil(userSelectedDateInMs / 1000) * 1000;
+    clickedTime = Math.ceil(clickedTime / 1000) * 1000;
 
     const intervalId = setInterval(() => {
-        const differenceInTime = convertMs(userSelectedDateInMs - new Date());
+        const differenceInTime = convertMs(userSelectedDateInMs - clickedTime);
+
         const { days, hours, minutes, seconds } = differenceInTime;
 
-        daysTimer.innerHTML = days;
-        hoursTimer.innerHTML = hours;
-        minutesTimer.innerHTML = minutes;
-        secondsTimer.innerHTML = seconds;
 
 
-        userSelectedDateInMs = userSelectedDateInMs - 100;
-        console.log(userSelectedDateInMs);
+        if (days < 0 && hours < 0 && minutes < 0 && seconds < 0) {
+            clearInterval(intervalId);
+            event.target.addEventListener('click', startTheTimer);
+        } else {
+            daysTimer.innerHTML = pad(days);
+            hoursTimer.innerHTML = pad(hours);
+            minutesTimer.innerHTML = pad(minutes);
+            secondsTimer.innerHTML = pad(seconds);
+
+        }
+
+        userSelectedDateInMs = userSelectedDateInMs - 1000;
     }, 1000);
+}
 
-    setTimeout(() => clearInterval(intervalId), userSelectedDateInMs - new Date() - 100);
 
-});
+function pad(number) {
 
+    number = number.toString();
+
+    return number.length === 1 ? number.padStart(2, '0') : number;
+}
 
 function makeDisableBtn() {
     startBtn.disabled = true;
